@@ -1,0 +1,75 @@
+import cv2
+import pandas as pd
+
+# --------------------------------------------------------------------------
+
+# Define the paths for the image and the color CSV file
+img_path = 'pic2.jpg'
+csv_path = "C:/Users/Acer/Downloads/colors.csv"
+
+# Load the color data from the CSV file
+index = ['color', 'color_name', 'hex', 'R', 'G', 'B']
+df = pd.read_csv(csv_path, names=index, header=None)
+
+# Read the image and resize it for display
+img = cv2.imread('C:/Users/Acer/Downloads/pic1.jpg')
+img = cv2.resize(img, (800, 600))
+
+# Initialize global variables for color selection
+clicked = False
+r = g = b = xpos = ypos = 0
+
+# Function to determine the closest color name based on RGB values
+def get_color_name(R, G, B):
+    minimum = 1000
+    for i in range(len(df)):
+        # Calculate the distance between the selected color and the colors in the dataset
+        d = abs(R - int(df.loc[i, 'R'])) + abs(G - int(df.loc[i, 'G'])) + abs(B - int(df.loc[i, 'B']))
+        if d <= minimum:
+            minimum = d
+            cname = df.loc[i, 'color_name']
+
+    return cname
+
+# Function to handle mouse double-click events to get pixel color
+def draw_function(event, x, y, flags, params):
+    if event == cv2.EVENT_LBUTTONDBLCLK:
+        global b, g, r, xpos, ypos, clicked
+        clicked = True
+        xpos = x
+        ypos = y
+        b, g, r = img[y, x]
+        b = int(b)
+        g = int(g)
+        r = int(r)
+
+# Create a window for displaying the image
+cv2.namedWindow('image')
+cv2.setMouseCallback('image', draw_function)
+
+while True:
+    cv2.imshow('image', img)
+    if clicked:
+        # Draw a colored rectangle at the top of the image
+        cv2.rectangle(img, (20, 20), (600, 60), (b, g, r), -1)
+
+        # Create a text string to show the color name and RGB values
+        text = get_color_name(r, g, b) + ' R=' + str(r) + ' G=' + str(g) + ' B=' + str(b)
+        # Display the text on the image
+        cv2.putText(img, text, (50, 50), 2, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+
+        # Change text color to black for very light colors
+        if r + g + b >= 600:
+            cv2.putText(img, text, (50, 50), 2, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+
+    # Break the loop when the 'Esc' key is pressed
+    if cv2.waitKey(20) & 0xFF == 27:
+        break
+
+cv2.destroyAllWindows()
+
+
+
+
+
+
